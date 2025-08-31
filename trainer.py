@@ -20,7 +20,7 @@ from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader
 
 import datasets
-import wandb
+# import wandb
 from layers import *
 from networks import pose
 from networks.decoder import DepthDecoder
@@ -181,9 +181,10 @@ class Trainer:
         self.epoch = 0
         self.step = 0
         self.start_time = time.time()
-        run_id = f"{dt.now().strftime('%d-%h_%H-%M')}"
-        name = f"{experiment_name}_{run_id}"
-        wandb.init(project=PROJECT, name=name, config=self.opt, dir='.', settings=wandb.Settings(init_timeout=180))
+        # wandb
+        # run_id = f"{dt.now().strftime('%d-%h_%H-%M')}"
+        # name = f"{experiment_name}_{run_id}"
+        # wandb.init(project=PROJECT, name=name, config=self.opt, dir='.', settings=wandb.Settings(init_timeout=180))
         for self.epoch in range(self.opt.num_epochs):
             self.run_epoch()
             if (self.epoch + 1) % self.opt.save_frequency == 0:
@@ -206,7 +207,7 @@ class Trainer:
             losses["loss"].backward()
             self.model_optimizer.step()
             self.model_lr_scheduler.step()
-            wandb.log({"learning_rate": self.model_optimizer.param_groups[1]['lr']})
+            # wandb.log({"learning_rate": self.model_optimizer.param_groups[1]['lr']})
 
             duration = time.time() - before_op_time
 
@@ -215,8 +216,8 @@ class Trainer:
             late_phase = self.step % 2000 == 0
 
             should_log = True
-            if should_log and self.step % self.opt.log_frequency == 0:
-                wandb.log({f"Train/reprojection_loss": losses["loss"].item()})
+            # if should_log and self.step % self.opt.log_frequency == 0:
+            #     wandb.log({f"Train/reprojection_loss": losses["loss"].item()})
             if early_phase or late_phase:
                 self.log_time(batch_idx, duration, losses["loss"].cpu().data)
 
@@ -225,8 +226,7 @@ class Trainer:
                     # 在每个 key 前加 "val_"
                     val_losses = {f"train/{k}": v for k, v in losses.items()}
                     # 记录到 wandb（可选加 step）
-                    wandb.log(val_losses)
-                    # self._log_vis_img(inputs['color', 0, 0], inputs['depth_gt'], outputs['depth', 0, 0],batch_idx=self.step)
+                    # wandb.log(val_losses)
 
                 self.log("train", inputs, outputs, losses)
                 self.val()
@@ -352,15 +352,15 @@ class Trainer:
                     for k, v in losses.items():
                         total_losses[k] = total_losses.get(k, 0.0) + v.item()
                     if  i ==1:
-                        self._log_vis_img(inputs['color', 0, 0], inputs['depth_gt'], outputs['depth', 0, 0],
-                                          batch_idx=self.step)
+                        # self._log_vis_img(inputs['color', 0, 0], inputs['depth_gt'], outputs['depth', 0, 0],
+                        #                   batch_idx=self.step)
                         self.log("val", inputs, outputs, losses)
 
                 del inputs, outputs, losses
 
         # 计算平均 loss 并记录到 wandb
         avg_losses = {f"val/{k}": total_losses[k] / num_batches for k in total_losses}
-        wandb.log(avg_losses)
+        # wandb.log(avg_losses)
         for k, v in avg_losses.items():
             self.writers['val'].add_scalar(k, v, global_step=self.step)
 
@@ -664,22 +664,22 @@ class Trainer:
         else:
             print("Cannot find Adam weights so Adam is randomly initialized")
 
-    def _log_vis_img(self, image, gt_depth, pred_depth, batch_idx):
-        image = image[0].cpu()
-        log_vis_data = {}
-        # 处理 gt_depth 为空的情况
-        if gt_depth is not None:
-            gt_depth = visualize_depth(gt_depth[0,0])
-            gt_depth_img = wandb.Image(gt_depth, caption="GT Depth")
-            log_vis_data[f"img/{batch_idx}_gt_depth"] = gt_depth_img
-
-        # 处理预测深度图
-        pred_depth = visualize_depth(pred_depth[0,0])
-
-        # 组织 WandB 记录数据
-        log_vis_data[f"img/{batch_idx}_input_image"] = wandb.Image(image, caption="Image")
-        log_vis_data[f"img/{batch_idx}_uav_depth"] = wandb.Image(pred_depth, caption="UAV Depth")
-        wandb.log(log_vis_data)
+    # def _log_vis_img(self, image, gt_depth, pred_depth, batch_idx):
+    #     image = image[0].cpu()
+    #     log_vis_data = {}
+    #     # 处理 gt_depth 为空的情况
+    #     if gt_depth is not None:
+    #         gt_depth = visualize_depth(gt_depth[0,0])
+    #         gt_depth_img = wandb.Image(gt_depth, caption="GT Depth")
+    #         log_vis_data[f"img/{batch_idx}_gt_depth"] = gt_depth_img
+    #
+    #     # 处理预测深度图
+    #     pred_depth = visualize_depth(pred_depth[0,0])
+    #
+    #     # 组织 WandB 记录数据
+    #     log_vis_data[f"img/{batch_idx}_input_image"] = wandb.Image(image, caption="Image")
+    #     log_vis_data[f"img/{batch_idx}_uav_depth"] = wandb.Image(pred_depth, caption="UAV Depth")
+    #     wandb.log(log_vis_data)
 
 def visualize_depth(depth, cmap=cv2.COLORMAP_JET):
     """
