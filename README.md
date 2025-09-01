@@ -3,7 +3,7 @@
 ## Train
 ```shell
 python train.py
---model_name [model_name] # 
+--model_name [TRSADepth] # 
 --split [eigen_zhou]
 --dataset [kitti]
 --pose_model_type [resnet]
@@ -14,7 +14,7 @@ python train.py
 --height [384]
 --width [640]
 --num_epochs [15/20/...]
---log_dir [./runs/log_dir]
+--log_dir [./logs/kitti]
 ```
 ## Evaluation
 ```shell
